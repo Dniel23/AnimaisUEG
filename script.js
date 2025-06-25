@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Chama a nossa API no backend
-            const response = await fetch('http://localhost:3000/gerar-pagamento', {
+            const response = await fetch('https://animaisueg.onrender.com/gerar-pagamento', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
