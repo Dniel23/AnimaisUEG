@@ -1,11 +1,12 @@
 require('dotenv').config();
 const express = require('express');
-const puppeteer = require('puppeteer-core');
-const chromium = require('chrome-aws-lambda');
 const cors = require('cors');
+// --- 1. NOVAS IMPORTAÇÕES ---
+// Importamos as classes necessárias do pdf-lib e o módulo 'fs' para ler a fonte
+const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+const fs = require('fs').promises;
 
-// --- 1. MUDANÇA NA IMPORTAÇÃO ---
-// Importamos as classes necessárias da nova versão do SDK
+// --- 2. MUDANÇA NA IMPORTAÇÃO do Mercado Pago ---
 const { MercadoPagoConfig, Payment } = require('mercadopago');
 
 const app = express();
@@ -14,13 +15,8 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// --- 2. NOVA FORMA DE CONFIGURAÇÃO ---
-// ATENÇÃO: Substitua pelo seu Access Token
-// Pegue o seu em: https://www.mercadopago.com.br/developers/panel/credentials
+// --- 3. NOVA FORMA DE CONFIGURAÇÃO do Mercado Pago ---
 const client = new MercadoPagoConfig({ accessToken: process.env.MERCADO_PAGO_TOKEN });
-
-// --- 3. INSTANCIANDO O SERVIÇO DE PAGAMENTO ---
-// Criamos uma instância do serviço de Pagamento com o cliente configurado
 const payment = new Payment(client);
 
 // Armazenamento temporário (em um projeto real, use um banco de dados)
@@ -46,21 +42,15 @@ app.post('/gerar-pagamento', async (req, res) => {
             email: `doador-${Date.now()}@teste.com`,
             first_name: nome,
         },
-        //notification_url: 'URL_DO_SEU_WEBHOOK_AQUI' // Opcional
     };
 
     try {
-        // --- 4. NOVA FORMA DE CHAMAR A API ---
-        // Usamos a instância de 'payment' e passamos os dados dentro de um objeto 'body'
         const data = await payment.create({ body: payment_data });
-
-        // Salva os dados da doação para gerar o certificado depois
         doacoes[data.id] = {
             nome: nome,
             valor: valorNumerico,
             status: 'pending'
         };
-
         res.json({
             id: data.id,
             copia_e_cola: data.point_of_interaction.transaction_data.qr_code,
@@ -72,17 +62,14 @@ app.post('/gerar-pagamento', async (req, res) => {
     }
 });
 
-// Rota para verificar o status do pagamento (polling)
+// Rota para verificar o status do pagamento
 app.get('/status-pagamento/:id', async (req, res) => {
     const paymentId = req.params.id;
     try {
-        // --- 5. NOVA FORMA DE BUSCAR UM PAGAMENTO ---
         const data = await payment.get({ id: paymentId });
-
         if (data.status === 'approved' && doacoes[data.id]) {
             doacoes[data.id].status = 'approved';
         }
-
         res.json({ status: data.status });
     } catch (error) {
         console.error('Erro ao consultar status:', error);
@@ -90,7 +77,7 @@ app.get('/status-pagamento/:id', async (req, res) => {
     }
 });
 
-// Rota para gerar o certificado em PDF
+// --- 4. ROTA DE CERTIFICADO REESCRITA COM PDF-LIB ---
 app.get('/gerar-certificado', async (req, res) => {
     const paymentId = req.query.id;
 
@@ -101,64 +88,79 @@ app.get('/gerar-certificado', async (req, res) => {
     const { nome, valor } = doacoes[paymentId];
 
     try {
-        const browser = await puppeteer.launch({
-            args: chromium.args,
-            defaultViewport: chromium.defaultViewport,
-            executablePath: await chromium.executablePath,
-            headless: chromium.headless,
-            ignoreHTTPSErrors: true,
+        // Cria um novo documento PDF
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([595.28, 841.89]); // Tamanho A4
+        const { width, height } = page.getSize();
+
+        // Carrega fontes que usaremos
+        const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+        // Define cores
+        const verdePrincipal = rgb(56 / 255, 142 / 255, 60 / 255); // #388E3C
+        const laranjaSecundario = rgb(255 / 255, 160 / 255, 0 / 255); // #FFA000
+        const textoEscuro = rgb(55 / 255, 71 / 255, 79 / 255); // #37474F
+
+        // Desenha o conteúdo do certificado
+        page.drawText('Certificado de Doação', {
+            x: 50,
+            y: height - 100,
+            font: helveticaBold,
+            size: 38,
+            color: verdePrincipal,
         });
-        const page = await browser.newPage();
 
-        const conteudoHtml = `
-            <!DOCTYPE html>
-            <html lang="pt-BR">
-            <head><meta charset="UTF-8">
-            <style>
-                @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
-                body { 
-                    font-family: 'Poppins', sans-serif;
-                    text-align: center; 
-                    border: 15px solid #388E3C; 
-                    border-radius: 10px;
-                    padding: 50px; 
-                    background-color: #f7fdf7;
-                }
-                .logo {
-                    width: 80px;
-                    height: 80px;
-                    color: #FFA000;
-                    margin-bottom: 20px;
-                }
-                h1 { color: #388E3C; font-size: 48px; font-weight: 700; margin-bottom: 20px; }
-                p { font-size: 20px; color: #37474F; }
-                .nome { font-size: 36px; color: #FFA000; font-weight: 700; margin: 25px 0; }
-                .footer-cert { margin-top: 50px; font-size: 14px; color: #78909C; }
-            </style>
-            </head>
-            <body>
-                <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2a10 10 0 00-4.89 1.52 1 1 0 00-.67 1.29 1 1 0 001.29.67A8 8 0 0119 10a1 1 0 002 0 10 10 0 00-9-8zM4 10a1 1 0 000 2 8 8 0 0111.11 6.48 1 1 0 001.29.67 1 1 0 00.67-1.29A10 10 0 004 10zm13 3a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1zm-6 0a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1z"/>
-                    <path d="M12 4a8 8 0 00-7.89 6.48 1 1 0 00.67 1.29 1 1 0 001.29-.67A6 6 0 0118 12a1 1 0 002 0A8 8 0 0012 4z"/>
-                </svg>
-                <h1>Certificado de Doação</h1>
-                <p>Com imensa gratidão, certificamos que</p>
-                <p class="nome">${nome}</p>
-                <p>realizou uma doação no valor de <strong>R$ ${valor.toFixed(2).replace('.', ',')}</strong>.</p>
-                <p>Sua generosidade e amor pelos animais fazem toda a diferença!</p>
-                <p class="footer-cert">Emitido em: ${new Date().toLocaleDateString('pt-BR')}</p>
-            </body></html>
-        `;
+        page.drawText('Com imensa gratidão, certificamos que', {
+            x: 50,
+            y: height - 180,
+            font: helvetica,
+            size: 18,
+            color: textoEscuro,
+        });
 
-        await page.setContent(conteudoHtml);
-        const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-        await browser.close();
+        page.drawText(nome, {
+            x: 50,
+            y: height - 240,
+            font: helveticaBold,
+            size: 32,
+            color: laranjaSecundario,
+        });
 
+        page.drawText(`realizou uma doação no valor de R$ ${valor.toFixed(2).replace('.', ',')}.`, {
+            x: 50,
+            y: height - 300,
+            font: helvetica,
+            size: 18,
+            color: textoEscuro,
+        });
+
+        page.drawText('Sua generosidade e amor pelos animais fazem toda a diferença!', {
+            x: 50,
+            y: height - 350,
+            font: helvetica,
+            size: 16,
+            color: textoEscuro,
+        });
+
+        page.drawText(`Emitido em: ${new Date().toLocaleDateString('pt-BR')}`, {
+            x: 50,
+            y: 80,
+            font: helvetica,
+            size: 12,
+            color: rgb(0.5, 0.5, 0.5),
+        });
+
+        // Serializa o PDF para bytes
+        const pdfBytes = await pdfDoc.save();
+
+        // Envia o PDF como resposta
         res.setHeader('Content-Disposition', `attachment; filename=Certificado-Doacao-${nome}.pdf`);
         res.setHeader('Content-Type', 'application/pdf');
-        res.send(pdfBuffer);
+        res.send(Buffer.from(pdfBytes));
+
     } catch (error) {
-        console.error('Erro ao gerar PDF:', error);
+        console.error('Erro ao gerar PDF com pdf-lib:', error);
         res.status(500).send('Erro ao gerar o certificado.');
     }
 });
