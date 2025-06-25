@@ -100,7 +100,15 @@ app.get('/gerar-certificado', async (req, res) => {
     const { nome, valor } = doacoes[paymentId];
 
     try {
-        const browser = await puppeteer.launch({ headless: true });
+       const browser = await puppeteer.launch({
+    headless: true,
+    args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--single-process'
+            ]
+        });
         const page = await browser.newPage();
         
         const conteudoHtml = `
