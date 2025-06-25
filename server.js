@@ -1,7 +1,8 @@
 require('dotenv').config();
 const express = require('express');
-const puppeteer = require('puppeteer');
-const cors =require('cors');
+const puppeteer = require('puppeteer-core');
+const chromium = require('chrome-aws-lambda');
+const cors = require('cors');
 
 // --- 1. MUDANÇA NA IMPORTAÇÃO ---
 // Importamos as classes necessárias da nova versão do SDK
@@ -30,7 +31,7 @@ const doacoes = {};
 // Rota para criar um pagamento PIX
 app.post('/gerar-pagamento', async (req, res) => {
     const { valor, nome } = req.body;
-    
+
     if (!valor || !nome) {
         return res.status(400).json({ error: 'Nome e valor são obrigatórios.' });
     }
@@ -52,7 +53,7 @@ app.post('/gerar-pagamento', async (req, res) => {
         // --- 4. NOVA FORMA DE CHAMAR A API ---
         // Usamos a instância de 'payment' e passamos os dados dentro de um objeto 'body'
         const data = await payment.create({ body: payment_data });
-        
+
         // Salva os dados da doação para gerar o certificado depois
         doacoes[data.id] = {
             nome: nome,
@@ -77,11 +78,11 @@ app.get('/status-pagamento/:id', async (req, res) => {
     try {
         // --- 5. NOVA FORMA DE BUSCAR UM PAGAMENTO ---
         const data = await payment.get({ id: paymentId });
-        
+
         if (data.status === 'approved' && doacoes[data.id]) {
             doacoes[data.id].status = 'approved';
         }
-        
+
         res.json({ status: data.status });
     } catch (error) {
         console.error('Erro ao consultar status:', error);
@@ -100,17 +101,15 @@ app.get('/gerar-certificado', async (req, res) => {
     const { nome, valor } = doacoes[paymentId];
 
     try {
-       const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--single-process'
-            ]
+        const browser = await puppeteer.launch({
+            args: chromium.args,
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath,
+            headless: chromium.headless,
+            ignoreHTTPSErrors: true,
         });
         const page = await browser.newPage();
-        
+
         const conteudoHtml = `
             <!DOCTYPE html>
             <html lang="pt-BR">
@@ -145,7 +144,7 @@ app.get('/gerar-certificado', async (req, res) => {
                 <h1>Certificado de Doação</h1>
                 <p>Com imensa gratidão, certificamos que</p>
                 <p class="nome">${nome}</p>
-                <p>realizou uma doação no valor de <strong>R$ ${valor.toFixed(2).replace('.',',')}</strong>.</p>
+                <p>realizou uma doação no valor de <strong>R$ ${valor.toFixed(2).replace('.', ',')}</strong>.</p>
                 <p>Sua generosidade e amor pelos animais fazem toda a diferença!</p>
                 <p class="footer-cert">Emitido em: ${new Date().toLocaleDateString('pt-BR')}</p>
             </body></html>
