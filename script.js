@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Chama a nossa API no backend
-            const response = await fetch('https://animaisueg.onrender.com/gerar-pagamento', {
+            const response = await fetch('animaisueg-production.up.railway.app/gerar-pagamento', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -53,26 +53,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    function verificarStatusPagamento() {
-        if (!currentPaymentId) return;
+function verificarStatusPagamento() {
+    if (!currentPaymentId) return;
 
-        const interval = setInterval(async () => {
-            try {
-                const response = await fetch(`https://animaisueg.onrender.com`);
-                const data = await response.json();
+    const interval = setInterval(async () => {
+        try {
+            // CORREÇÃO 1: URL completa para verificar o status
+            const response = await fetch(`https://animaisueg-production.up.railway.app/status-pagamento/${currentPaymentId}`);
+            const data = await response.json();
 
-                if (data.status === 'approved') {
-                    clearInterval(interval);
-                    statusPagamento.innerText = 'Pagamento confirmado! Seu certificado está pronto.';
-                    statusPagamento.style.color = 'green';
-                    btnDownload.disabled = false;
-                    btnDownload.onclick = () => {
-                        window.open(`https://animaisueg.onrender.com/gerar-certificado?id=${currentPaymentId}`, '_blank');
-                    };
-                }
-            } catch (error) {
-                console.error('Erro ao verificar status:', error);
+            if (data.status === 'approved') {
+                clearInterval(interval);
+                statusPagamento.innerText = 'Pagamento confirmado! Seu certificado está pronto.';
+                statusPagamento.style.color = 'green';
+                btnDownload.disabled = false;
+                btnDownload.onclick = () => {
+                    URL completa para gerar o certificado
+                    window.open(`https://animaisueg-production.up.railway.app/gerar-certificado?id=${currentPaymentId}`, '_blank');
+                };
             }
-        }, 5000); // Verifica a cada 5 segundos
-    }
+        } catch (error) {
+            console.error('Erro ao verificar status:', error);
+            // Opcional: parar de verificar se houver muitos erros para não sobrecarregar
+            // clearInterval(interval); 
+        }
+    }, 5000); // Verifica a cada 5 segundos
+}
 });
