@@ -1,0 +1,239 @@
+:root {
+    --primary-color: #388E3C; /* Verde mais sóbrio e elegante */
+    --secondary-color: #FFA000; /* Laranja/Âmbar vibrante */
+    --light-bg: #F5F5F5;
+    --dark-text: #37474F; /* Cinza azulado escuro para texto */
+    --white: #FFFFFF;
+    --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    --border-radius: 12px;
+    --transition: all 0.3s ease-in-out;
+    --font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Importa a fonte Poppins do Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+body {
+    font-family: var(--font-family);
+    margin: 0;
+    background-color: var(--light-bg);
+    color: var(--dark-text);
+    line-height: 1.7;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+/* --- NOVO HEADER --- */
+header {
+    background: linear-gradient(135deg, var(--primary-color), #4CAF50);
+    color: var(--white);
+    padding: 60px 20px 120px 20px; /* Mais padding no final para a onda */
+    text-align: center;
+    position: relative;
+}
+
+.header-content {
+    max-width: 800px;
+    margin: 0 auto;
+    animation: fadeInDown 1s ease-out;
+}
+
+.header-logo {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 20px;
+    color: #FFEB3B; /* Amarelo para o logo */
+    animation: bounceIn 1.5s ease-out;
+}
+
+header h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.header-subtitle {
+    font-size: 1.2rem;
+    font-weight: 400;
+    opacity: 0.9;
+    margin: 0;
+}
+
+/* Container da onda para transição suave */
+.wave-container {
+    position: absolute;
+    bottom: -1px; /* Para cobrir qualquer linha fina */
+    left: 0;
+    width: 100%;
+    overflow: hidden;
+    line-height: 0;
+}
+
+.wave {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100px; /* Altura da onda */
+}
+
+/* --- CONTEÚDO PRINCIPAL --- */
+.container {
+    max-width: 800px;
+    margin: -80px auto 30px auto; /* Margem negativa para subir sobre a onda */
+    padding: 40px;
+    background-color: var(--white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    z-index: 10;
+    position: relative;
+    flex-grow: 1;
+}
+
+section {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 0.8s forwards;
+    animation-delay: 0.5s;
+}
+
+@keyframes fadeUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+h2, h3 {
+    color: var(--primary-color);
+    font-weight: 600;
+    border-bottom: 2px solid var(--secondary-color);
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+}
+
+#donation-form label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+#donation-form input {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 25px;
+    border: 1px solid #CFD8DC;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 1rem;
+    font-family: var(--font-family);
+    transition: var(--transition);
+}
+
+#donation-form input:focus {
+    border-color: var(--secondary-color);
+    outline: none;
+    box-shadow: 0 0 8px rgba(255, 160, 0, 0.3);
+}
+
+#donation-form button {
+    background: var(--secondary-color);
+    color: var(--white);
+    font-weight: 700;
+    border: none;
+    padding: 15px 35px;
+    border-radius: 50px; /* Botão arredondado */
+    cursor: pointer;
+    font-size: 1.1rem;
+    width: 100%;
+    transition: var(--transition);
+    box-shadow: 0 4px 10px rgba(255, 160, 0, 0.3);
+}
+
+#donation-form button:hover {
+    background: #FFB300;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(255, 160, 0, 0.4);
+}
+
+/* --- ÁREA PIX --- */
+#pix-area.hidden { display: none; }
+
+#pix-qrcode img {
+    display: block;
+    margin: 25px auto;
+    max-width: 280px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+#pix-copia-cola {
+    width: 100%;
+    padding: 15px;
+    box-sizing: border-box;
+    text-align: center;
+    font-size: 1rem;
+    margin-bottom: 25px;
+    border: 2px dashed #B0BEC5;
+    border-radius: 8px;
+    background-color: #ECEFF1;
+    resize: none;
+}
+
+#btn-download {
+    background-color: var(--primary-color);
+    color: var(--white);
+    padding: 15px 30px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 1.1rem;
+    transition: var(--transition);
+    box-shadow: 0 4px 10px rgba(56, 142, 60, 0.3);
+}
+
+#btn-download:hover {
+    background-color: #2E7D32;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(56, 142, 60, 0.4);
+}
+
+#btn-download:disabled {
+    background-color: #BDBDBD;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+#status-pagamento {
+    text-align: center;
+    margin-top: 25px;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+/* --- FOOTER --- */
+footer {
+    text-align: center;
+    padding: 25px;
+    background-color: #37474F;
+    color: var(--white);
+}
+
+footer p { margin: 0; opacity: 0.8; }
+
+/* --- ANIMAÇÕES --- */
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bounceIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.1); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+}
