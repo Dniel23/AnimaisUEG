@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const interval = setInterval(async () => {
             try {
-                const response = await fetch(`http://localhost:3000/status-pagamento/${currentPaymentId}`);
+                const response = await fetch(`https://animaisueg.onrender.com`);
                 const data = await response.json();
 
                 if (data.status === 'approved') {
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusPagamento.style.color = 'green';
                     btnDownload.disabled = false;
                     btnDownload.onclick = () => {
-                        window.open(`http://localhost:3000/gerar-certificado?id=${currentPaymentId}`, '_blank');
+                        window.open(`https://animaisueg.onrender.com/gerar-certificado?id=${currentPaymentId}`, '_blank');
                     };
                 }
             } catch (error) {
